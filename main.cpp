@@ -1,4 +1,5 @@
 #include <irrlicht.h>
+#include <iostream>
 
 using namespace irr;
 
@@ -52,10 +53,10 @@ int main()
 	ISceneManager* smgr = device->getSceneManager();
 	IGUIEnvironment* guienv = device->getGUIEnvironment();
 
-	guienv->addStaticText(L"Hello World! This is the Irrlicht Software renderer!",
+	guienv->addStaticText(L"Si ça marche je suis un boss",
 		rect<s32>(10,10,260,22), true);
 
-	IAnimatedMesh* mesh = smgr->getMesh("assets/ninja.b3d");
+	IAnimatedMesh* mesh = smgr->getMesh("Assets/ninja.b3d");
 	if (!mesh)
 	{
 		device->drop();
@@ -67,7 +68,7 @@ int main()
 	{
 		node->setMaterialFlag(EMF_LIGHTING, false);
 		node->setMD2Animation(scene::EMAT_STAND);
-		node->setMaterialTexture( 0, driver->getTexture("media/nskinbl.jpg") );
+		node->setMaterialTexture( 0, driver->getTexture("Assets/nskinbl.jpg") );
 	}
 
 	smgr->addCameraSceneNode(0, vector3df(0,10,10), vector3df(0,4,0));

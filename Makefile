@@ -7,7 +7,7 @@ Target := Bomberman
 # List of source files, separated by spaces
 Sources := main.cpp
 # Path to Irrlicht directory, should contain include/ and lib/
-IrrlichtHome :=
+IrrlichtHome :=./
 # Path for the executable. Note that Irrlicht.dll should usually also be there for win32 systems
 BinPath = ./
 
