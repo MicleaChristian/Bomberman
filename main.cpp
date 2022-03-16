@@ -1,114 +1,174 @@
+/** Example 004 Movement
+
+This Tutorial shows how to move and animate SceneNodes. The
+basic concept of SceneNodeAnimators is shown as well as manual
+movement of nodes using the keyboard.  We'll demonstrate framerate
+independent movement, which means moving by an amount dependent
+on the duration of the last run of the Irrlicht loop.
+
+Example 19.MouseAndJoystick shows how to handle those kinds of input.
+
+As always, I include the header files, use the irr namespace,
+and tell the linker to link with the .lib file.
+*/
+#ifdef _MSC_VER
+// We'll also define this to stop MSVC complaining about sprintf().
+#define _CRT_SECURE_NO_WARNINGS
+#pragma comment(lib, "Irrlicht.lib")
+#endif
+
 #include <irrlicht.h>
-#include <iostream>
+#include "driverChoice.h"
 
 using namespace irr;
 
-using namespace core;
-using namespace scene;
-using namespace video;
-using namespace io;
-using namespace gui;
+/*
+To receive events like mouse and keyboard input, or GUI events like "the OK
+button has been clicked", we need an object which is derived from the
+irr::IEventReceiver object. There is only one method to override:
+irr::IEventReceiver::OnEvent(). This method will be called by the engine once
+when an event happens. What we really want to know is whether a key is being
+held down, and so we will remember the current state of each key.
+*/
+class MyEventReceiver : public IEventReceiver
+{
+public:
+	// This is the one method that we have to implement
+	virtual bool OnEvent(const SEvent& event)
+	{
+		// Remember whether each key is down or up
+		if (event.EventType == irr::EET_KEY_INPUT_EVENT)
+			KeyIsDown[event.KeyInput.Key] = event.KeyInput.PressedDown;
 
-#ifdef _IRR_WINDOWS_
-#pragma comment(lib, "Irrlicht.lib")
-#pragma comment(linker, "/subsystem:windows /ENTRY:mainCRTStartup")
-#endif
+		return false;
+	}
+
+	// This is used to check whether a key is being held down
+	virtual bool IsKeyDown(EKEY_CODE keyCode) const
+	{
+		return KeyIsDown[keyCode];
+	}
+	
+	MyEventReceiver()
+	{
+		for (u32 i=0; i<KEY_KEY_CODES_COUNT; ++i)
+			KeyIsDown[i] = false;
+	}
+
+private:
+	// We use this array to store the current state of each key
+	bool KeyIsDown[KEY_KEY_CODES_COUNT];
+};
+
 
 int main()
 {
-
-	video::E_DRIVER_TYPE driverType;
-
-	printf("Please select the driver you want for this example:\n"\
-		" (a) OpenGL 1.5\n (b) Direct3D 9.0c\n (c) Direct3D 8.1\n"\
-		" (d) Burning's Software Renderer\n (e) Software Renderer\n"\
-		" (f) NullDevice\n (otherKey) exit\n\n");
-
-	char i;
-	std::cin >> i;
-
-	switch(i)
-	{
-		case 'a': driverType = video::EDT_OPENGL;   break;
-		case 'b': driverType = video::EDT_DIRECT3D9;break;
-		case 'c': driverType = video::EDT_DIRECT3D8;break;
-		case 'd': driverType = video::EDT_BURNINGSVIDEO;break;
-		case 'e': driverType = video::EDT_SOFTWARE; break;
-		case 'f': driverType = video::EDT_NULL;     break;
-		default: return 1;
-	}
-
-
-	IrrlichtDevice *device =
-		createDevice( video::EDT_SOFTWARE, dimension2d<u32>(1920, 1080), 16,
-			false, false, false, 0);
-
-	if (!device)
+	// ask user for driver
+	video::E_DRIVER_TYPE driverType=driverChoiceConsole();
+	if (driverType==video::EDT_COUNT)
 		return 1;
 
-	device->setWindowCaption(L"Test Modifications");
+	// create device
+	MyEventReceiver receiver;
 
+	IrrlichtDevice* device = createDevice(driverType,
+			core::dimension2d<u32>(640, 480), 16, false, false, false, &receiver);
 
-	IVideoDriver* driver = device->getVideoDriver();
-	ISceneManager* smgr = device->getSceneManager();
-	IGUIEnvironment* guienv = device->getGUIEnvironment();
+	if (device == 0)
+		return 1; // could not create selected driver.
 
-	guienv->addStaticText(L"Si ça marche je suis un boss",
-		rect<s32>(10,10,260,22), true);
+	video::IVideoDriver* driver = device->getVideoDriver();
+	scene::ISceneManager* smgr = device->getSceneManager();
 
-	IAnimatedMesh* mesh = smgr->getMesh("Assets/mario.obj");
-	if (!mesh)
+		
+	irr::scene::IAnimatedMesh *mesh2 =smgr->getMesh("Assets/mario.obj");
+
+	if(!mesh2)
 	{
 		device->drop();
 		return 1;
 	}
-	IAnimatedMeshSceneNode* node = smgr->addAnimatedMeshSceneNode( mesh );
 
-	if (node)
+	irr::scene::IAnimatedMeshSceneNode *node2 = smgr->addAnimatedMeshSceneNode ( mesh2 );
+	if (node2)
 	{
-		node->setMaterialFlag(EMF_LIGHTING, false);
-		node->setMD2Animation(scene::EMAT_STAND);
-		node->setMaterialTexture( 0, driver->getTexture("Assets/mario.jpg") );
+		node2->setMaterialFlag(irr::video::EMF_LIGHTING, false);
+		node2->setMaterialTexture(0, driver->getTexture("Assets/mario.jpg"));
 	}
 
-	smgr->addCameraSceneNode(0, vector3df(0,10,10), vector3df(0,4,0));
+	
+	smgr->addCameraSceneNode(0, irr::core::vector3df(3,0, 0), irr::core::vector3df(0, 0, 0));
+	device->getCursorControl()->setVisible(false);
 
-	/*
-	Ok, now we have set up the scene, lets draw everything: We run the
-	device in a while() loop, until the device does not want to run any
-	more. This would be when the user closes the window or presses ALT+F4
-	(or whatever keycode closes a window).
-	*/
+	
+	device->getGUIEnvironment()->addImage(
+		driver->getTexture("Assets/irrlichtlogoalpha2.tga"),
+		core::position2d<s32>(10,20));
+
+	gui::IGUIStaticText* diagnostics = device->getGUIEnvironment()->addStaticText(
+		L"", core::rect<s32>(10, 10, 400, 20));
+	diagnostics->setOverrideColor(video::SColor(255, 255, 255, 0));
+
+
+	
+	int lastFPS = -1;
+
+	u32 then = device->getTimer()->getTime();
+
+	// This is the movemen speed in units per second.
+	const f32 MOVEMENT_SPEED = 5.f;
+
 	while(device->run())
 	{
-		/*
-		Anything can be drawn between a beginScene() and an endScene()
-		call. The beginScene() call clears the screen with a color and
-		the depth buffer, if desired. Then we let the Scene Manager and
-		the GUI Environment draw their content. With the endScene()
-		call everything is presented on the screen.
-		*/
-		driver->beginScene(true, true, SColor(255,100,101,140));
+		// Work out a frame delta time.
+		const u32 now = device->getTimer()->getTime();
+		const f32 frameDeltaTime = (f32)(now - then) / 1000.f; // Time in seconds
+		then = now;
 
-		smgr->drawAll();
-		guienv->drawAll();
+		/* Check if keys W, S, A or D are being held down, and move the
+		sphere node around respectively. */
+		core::vector3df nodePosition = node2->getPosition();
+
+		if(receiver.IsKeyDown(irr::KEY_KEY_Z))
+			nodePosition.X += MOVEMENT_SPEED * frameDeltaTime;
+		else if(receiver.IsKeyDown(irr::KEY_KEY_S))
+			nodePosition.X -= MOVEMENT_SPEED * frameDeltaTime;
+
+		if(receiver.IsKeyDown(irr::KEY_KEY_Q))
+			nodePosition.Z -= MOVEMENT_SPEED * frameDeltaTime;
+		else if(receiver.IsKeyDown(irr::KEY_KEY_D))
+			nodePosition.Z += MOVEMENT_SPEED * frameDeltaTime;
+
+		node2->setPosition(nodePosition);
+		driver->beginScene(true, true, video::SColor(255,113,113,133));
+
+		smgr->drawAll(); // draw the 3d scene
+		device->getGUIEnvironment()->drawAll(); // draw the gui environment (the logo)
 
 		driver->endScene();
+
+		int fps = driver->getFPS();
+
+		if (lastFPS != fps)
+		{
+			core::stringw tmp(L"Movement Example - Irrlicht Engine [");
+			tmp += driver->getName();
+			tmp += L"] fps: ";
+			tmp += fps;
+
+			device->setWindowCaption(tmp.c_str());
+			lastFPS = fps;
+		}
 	}
 
 	/*
-	After we are done with the render loop, we have to delete the Irrlicht
-	Device created before with createDevice(). In the Irrlicht Engine, you
-	have to delete all objects you created with a method or function which
-	starts with 'create'. The object is simply deleted by calling ->drop().
-	See the documentation at irr::IReferenceCounted::drop() for more
-	information.
+	In the end, delete the Irrlicht device.
 	*/
 	device->drop();
-
+	
 	return 0;
 }
 
 /*
-That's it. Compile and run.
+That's it. Compile and play around with the program.
 **/
