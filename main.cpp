@@ -97,7 +97,7 @@ int main()
 	}
 
 	
-	smgr->addCameraSceneNode(0, irr::core::vector3df(3,0, 0), irr::core::vector3df(0, 0, 0));
+	smgr->addCameraSceneNode(0, irr::core::vector3df(-3,2,0), irr::core::vector3df(10, -3, 0));
 	device->getCursorControl()->setVisible(false);
 
 	
@@ -135,9 +135,9 @@ int main()
 			nodePosition.X -= MOVEMENT_SPEED * frameDeltaTime;
 
 		if(receiver.IsKeyDown(irr::KEY_KEY_Q))
-			nodePosition.Z -= MOVEMENT_SPEED * frameDeltaTime;
-		else if(receiver.IsKeyDown(irr::KEY_KEY_D))
 			nodePosition.Z += MOVEMENT_SPEED * frameDeltaTime;
+		else if(receiver.IsKeyDown(irr::KEY_KEY_D))
+			nodePosition.Z -= MOVEMENT_SPEED * frameDeltaTime;
 
 		node2->setPosition(nodePosition);
 		driver->beginScene(true, true, video::SColor(255,113,113,133));
