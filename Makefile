@@ -1,19 +1,15 @@
-# Makefile for Irrlicht Examples
-# It's usually sufficient to change just the target name and source file list
-# and be sure that CXX is set to a valid compiler
-
 # Name of the executable created (.exe will be added automatically if necessary)
 Target := Bomberman
+
 # List of source files, separated by spaces
 Sources := main.cpp
+
 # Path to Irrlicht directory, should contain include/ and lib/
 IrrlichtHome :=./
+
 # Path for the executable. Note that Irrlicht.dll should usually also be there for win32 systems
 BinPath = ./
 
-# general compiler settings (might need to be set when compiling the lib, too)
-# preprocessor flags, e.g. defines and include paths
-USERCPPFLAGS = 
 # compiler flags such as optimization flags
 USERCXXFLAGS = -O3 -ffast-math
 #USERCXXFLAGS = -g -Wall
@@ -28,8 +24,10 @@ CPPFLAGS = -I$(IrrlichtHome)/include -I/usr/X11R6/include $(USERCPPFLAGS)
 CXXFLAGS = $(USERCXXFLAGS)
 LDFLAGS = $(USERLDFLAGS)
 
+OPTS =  -I"/lang/include" -L"/usr/lib" /lang/bin/linux-gcc-64/libIrrKlang.so -pthread
+
 #default target is Linux
-all: all_linux
+all: all_linux 
 
 # target specific settings
 all_linux all_win32 static_win32: LDFLAGS += -L$(IrrlichtHome)/lib/$(SYSTEM) -lIrrlicht
