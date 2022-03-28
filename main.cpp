@@ -109,8 +109,20 @@ int main(int argc, const char** argv)
 	{
 		node->setMaterialFlag(irr::video::EMF_LIGHTING, false);
 		node->setMaterialTexture(0, driver->getTexture("Assets/brick.png"));
-	}
+		node->setPosition(irr::core::vector3df(0,-1.7,0));
 		node->setScale(irr::core::vector3df(0.5f, 0.5f, 0.5f));
+	}
+
+	irr::scene::IAnimatedMeshSceneNode *node;
+	if (node)
+	{
+		node->setMaterialFlag(irr::video::EMF_LIGHTING, false);
+		node->setMaterialTexture(0, driver->getTexture("Assets/brick.png"));
+		node->setPosition(irr::core::vector3df(0,-1.7,2));
+		node->setScale(irr::core::vector3df(0.5f, 0.5f, 0.5f));
+	}
+
+
 	
 
 
