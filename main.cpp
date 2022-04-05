@@ -48,6 +48,7 @@ private:
 };
 
 int chckrot=0;
+int check_move = 0;
 
 int main(int argc, const char** argv)
 
@@ -93,6 +94,7 @@ int main(int argc, const char** argv)
 		mario->setMaterialTexture(2, driver->getTexture("Assets/meye.png"));
 		mario->setMaterialTexture(1, driver->getTexture("Assets/brow.png"));
 		mario->setScale(irr::core::vector3df(0.05f, 0.05f, 0.05f));
+		mario->setFrameLoop(0,45);
 	}
 
 	irr::scene::IAnimatedMeshSceneNode *gr = smgr->addAnimatedMeshSceneNode ( mesh );
@@ -103,92 +105,121 @@ int main(int argc, const char** argv)
 		gr->setPosition(irr::core::vector3df(0,-1.7,0));
 		gr->setScale(irr::core::vector3df(0.5f, 0.5f, 0.5f));
 	}
-	
-
 
 	smgr->addCameraSceneNode(0, irr::core::vector3df(-3,2,0), irr::core::vector3df(10, -3, 0));
 	device->getCursorControl()->setVisible(false);
-
-	gui::IGUIStaticText* diagnostics = device->getGUIEnvironment()->addStaticText(
-		L"", core::rect<s32>(10, 10, 400, 20));
-	diagnostics->setOverrideColor(video::SColor(255, 255, 255, 0));
 	
 	int lastFPS = -1;
-
 	u32 then = device->getTimer()->getTime();
-
 	const f32 MOVEMENT_SPEED = 7.f;
 	
-	engine->play2D("Assets/mario.ogg", true);
-	
+	engine->play2D("Sounds/mario.ogg", true);
+
 	while(device->run())
 	{
 		const u32 now = device->getTimer()->getTime();
 		const f32 frameDeltaTime = (f32)(now - then) / 1000.f;
 		then = now;
 
+
+
+		if(check_move==1)
+		{
+			mario->setAnimationSpeed(80.0f);
+		}
+		
+		else if(check_move==0)
+		{
+			mario->setCurrentFrame(10.0f);
+			mario->setAnimationSpeed(0.0f);
+		}
+
 		core::vector3df nodePosition = mario->getPosition();
 
 		if(receiver.IsKeyDown(irr::KEY_KEY_Z))
 		{
 			nodePosition.X += MOVEMENT_SPEED * frameDeltaTime;
-			mario->setRotation(irr::core::vector3df(0,360,0));
 			chckrot=1;
+			check_move = 1;
 		}
 
-		else if(receiver.IsKeyDown(irr::KEY_KEY_S))
+		if(receiver.IsKeyDown(KEY_KEY_S))
 		{
 			nodePosition.X -= MOVEMENT_SPEED * frameDeltaTime;
-			mario->setRotation(irr::core::vector3df(0,180,0));
 			chckrot=2;
+			check_move = 1;
 		}
 
-		if(receiver.IsKeyDown(irr::KEY_KEY_Q))
+		if(receiver.IsKeyDown(KEY_KEY_Q))
 		{
 			nodePosition.Z += MOVEMENT_SPEED * frameDeltaTime;
-			mario->setRotation(irr::core::vector3df(0,270,0));
 			chckrot=3;
+			check_move = 1;
 		}
 
-		else if(receiver.IsKeyDown(irr::KEY_KEY_D))
+		if(receiver.IsKeyDown(KEY_KEY_D))
 		{
 			nodePosition.Z -= MOVEMENT_SPEED * frameDeltaTime;
-			mario->setRotation(irr::core::vector3df(0,90,0));
 			chckrot=4;
+			check_move = 1;
 		}
 
-		if(receiver.IsKeyDown(irr::KEY_KEY_D)&&receiver.IsKeyDown(irr::KEY_KEY_Z))
+		if(receiver.IsKeyDown(KEY_KEY_D)&&receiver.IsKeyDown(KEY_KEY_Z))
 		{
-			mario->setRotation(irr::core::vector3df(0,45,0));
+			chckrot=5;
+			check_move = 1;
 		}
 
-		if(receiver.IsKeyDown(irr::KEY_KEY_D)&&receiver.IsKeyDown(irr::KEY_KEY_S))
+		if(receiver.IsKeyDown(KEY_KEY_D)&&receiver.IsKeyDown(KEY_KEY_S))
 		{
-			mario->setRotation(irr::core::vector3df(0,135,0));
+			chckrot=6;
+			check_move = 1;
 		}
 
-		if(receiver.IsKeyDown(irr::KEY_KEY_S)&&receiver.IsKeyDown(irr::KEY_KEY_Q))
+		if(receiver.IsKeyDown(KEY_KEY_S)&&receiver.IsKeyDown(KEY_KEY_Q))
 		{
-			mario->setRotation(irr::core::vector3df(0,225,0));
+			chckrot=7;
+			check_move = 1;
 		}
 
-		if(receiver.IsKeyDown(irr::KEY_KEY_Q)&&receiver.IsKeyDown(irr::KEY_KEY_Z))
+		if(receiver.IsKeyDown(KEY_KEY_Q)&&receiver.IsKeyDown(KEY_KEY_Z))
 		{
-			mario->setRotation(irr::core::vector3df(0,315,0));
+			chckrot=8;
+			check_move = 1;
 		}
 
-		if(receiver.IsKeyDown(irr::KEY_SPACE))
+		if(MOVEMENT_SPEED==0)
+			check_move = 0;
+			
+		if(receiver.IsKeyDown(KEY_SPACE))
+		{
+			engine->play2D("Sounds/mama.ogg");
+		}
+
+		if(!receiver.IsKeyDown(KEY_SPACE))
 		{
 			if(chckrot==1)
-			mario->setRotation(irr::core::vector3df(0,360,-90));
+			mario->setRotation(irr::core::vector3df(0,270,0));
 			else if(chckrot==2)
-			mario->setRotation(irr::core::vector3df(0,180,90));
+			mario->setRotation(irr::core::vector3df(0,90,0));
 			if(chckrot==3)
-			mario->setRotation(irr::core::vector3df(-90,270,0));
+			mario->setRotation(irr::core::vector3df(0,180,0));
 			else if(chckrot==4)
-			mario->setRotation(irr::core::vector3df(90,90,0));
-		}
+			mario->setRotation(irr::core::vector3df(0,0,0));
+			if(chckrot==5)
+			mario->setRotation(irr::core::vector3df(0,315,0));
+			if(chckrot==6)
+			mario->setRotation(irr::core::vector3df(0,45,0));
+			if(chckrot==7)
+			mario->setRotation(irr::core::vector3df(0,135,0));
+			if(chckrot==8)
+			mario->setRotation(irr::core::vector3df(0,225,0));
+		}		
 
+		if(!receiver.IsKeyDown(KEY_KEY_Z)&&!receiver.IsKeyDown(KEY_KEY_Q)&&!receiver.IsKeyDown(KEY_KEY_S)&&!receiver.IsKeyDown(KEY_KEY_D))
+		{
+			check_move=0;
+		}
 
 		mario->setPosition(nodePosition);
 		driver->beginScene(true, true, video::SColor(255,0,255,255));
