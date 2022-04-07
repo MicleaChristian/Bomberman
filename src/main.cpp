@@ -483,7 +483,7 @@ int main(int argc, const char** argv)
 
 //Create in-game camera
 
-	smgr->addCameraSceneNode(0, irr::core::vector3df(-4,3,0), irr::core::vector3df(10, -3, 0));
+	smgr->addCameraSceneNode(0, irr::core::vector3df(0,7,0), irr::core::vector3df(9, -15, 0));
 	device->getCursorControl()->setVisible(false);
 	
 
