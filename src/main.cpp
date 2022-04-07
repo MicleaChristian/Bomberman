@@ -43,17 +43,13 @@ int main(int argc, const char** argv)
 
 	int menu();
 
-	video::E_DRIVER_TYPE driverType=driverChoiceConsole();
-	if (driverType==video::EDT_COUNT)
-		return 1;
-
 
 
 //Create window
 
 	MyEventReceiver receiver;
 
-	IrrlichtDevice* device = createDevice(driverType,
+	IrrlichtDevice* device = createDevice(EDT_OPENGL,
 			core::dimension2d<u32>(1920, 1080), 32, false, false, false, &receiver);
 
 	if (device == 0)
