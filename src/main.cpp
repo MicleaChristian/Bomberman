@@ -85,6 +85,9 @@ int main(int argc, const char** argv)
 
 //3d models attributes
 
+
+
+
 	irr::scene::IAnimatedMeshSceneNode *mario = smgr->addAnimatedMeshSceneNode ( mesh2 );
 	if (mario)
 	{
@@ -476,25 +479,25 @@ int main(int argc, const char** argv)
 		gr41->setPosition(irr::core::vector3df(7.5,-1.5,0));
 		gr41->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
 	}
-
 //Create in-game camera
 
-	smgr->addCameraSceneNode(0, irr::core::vector3df(0,7,0), irr::core::vector3df(9, -15, 0));
-	device->getCursorControl()->setVisible(false);
-	
-
+	smgr->addCameraSceneNode(0, irr::core::vector3df(0,7,0), irr::core::vector3df(10, -15, 0));
+	device->getCursorControl()->setVisible(true);
 //create movement physics
+
 
 	int lastFPS = -1;
 	u32 then = device->getTimer()->getTime();
 	const f32 MOVEMENT_SPEED = 7.f;
-	
-
 //play BGM
 
 	engine->play2D("../sounds/mario.ogg", true);
+	driver->setTextureCreationFlag(video::ETCF_CREATE_MIP_MAPS, false);
 
 
+    scene::ISceneNode* skydome=smgr->addSkyDomeSceneNode(driver->getTexture("../textures/sky.jpg"),16,16,1.0f,2.0f);
+
+    driver->setTextureCreationFlag(video::ETCF_CREATE_MIP_MAPS, true);
 //open window
 
 	while(device->run())
@@ -502,10 +505,8 @@ int main(int argc, const char** argv)
 		const u32 now = device->getTimer()->getTime();
 		const f32 frameDeltaTime = (f32)(now - then) / 1000.f;
 		then = now;
-
-
-
 //Movement
+
 		if(check_move==1)
 		{
 			mario->setAnimationSpeed(90.0f);
