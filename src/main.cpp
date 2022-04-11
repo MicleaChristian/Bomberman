@@ -99,6 +99,29 @@ int main(int argc, const char** argv)
 		mario->setFrameLoop(0,60);
 	}
 //map gen
+
+	scene::ITriangleSelector* selector = 0;
+
+	if (mario)
+	{
+		mario->setPosition(core::vector3df(0,10,0));
+
+		selector = smgr->createOctreeTriangleSelector(
+				mario->getMesh(), mario, 128);
+		mario->setTriangleSelector(selector);
+		// We're not done with this selector yet, so don't drop it.
+	}
+
+		if (selector)
+	{
+		scene::ISceneNodeAnimator* anim = smgr->createCollisionResponseAnimator(
+			selector, mario, core::vector3df(30,50,30),
+			core::vector3df(0,-10,0), core::vector3df(0,30,0));
+		selector->drop(); // As soon as we're done with the selector, drop it.
+		mario->addAnimator(anim);
+		anim->drop();  // And likewise, drop the animator when we're done referring to it.
+	}
+
 	irr::scene::IAnimatedMeshSceneNode *gr = smgr->addAnimatedMeshSceneNode ( mesh );
 	if (gr)
 	{
@@ -479,6 +502,24 @@ int main(int argc, const char** argv)
 		gr41->setPosition(irr::core::vector3df(7.5,-1.5,0));
 		gr41->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
 	}
+
+	irr::scene::IAnimatedMeshSceneNode *gr42 = smgr->addAnimatedMeshSceneNode ( mesh );
+	if (gr42)
+	{
+		gr42->setMaterialFlag(irr::video::EMF_LIGHTING, false);
+		gr42->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
+		gr42->setPosition(irr::core::vector3df(7.5,0,3));
+		gr42->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
+	}
+	irr::scene::IAnimatedMeshSceneNode *gr43 = smgr->addAnimatedMeshSceneNode ( mesh );
+	if (gr43)
+	{
+		gr43->setMaterialFlag(irr::video::EMF_LIGHTING, false);
+		gr43->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
+		gr43->setPosition(irr::core::vector3df(3,0,3));
+		gr43->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
+	}
+
 //Create in-game camera
 
 	smgr->addCameraSceneNode(0, irr::core::vector3df(0,7,0), irr::core::vector3df(10, -15, 0));
