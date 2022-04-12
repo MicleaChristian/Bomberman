@@ -67,11 +67,13 @@ int main()
 		if(receiver.IsKeyDown(irr::KEY_DOWN))
 		{
 			check_menu = check_menu - 1;
+			engine->play2D("../sounds/yoshi.ogg", false);
 		}
 			
 		else if(receiver.IsKeyDown(irr::KEY_UP))
 		{
 			check_menu = check_menu + 1;
+			engine->play2D("../sounds/yoshi.ogg", false);
 		}
 
 		std::cout << "check_menu = " << check_menu << std::endl;
