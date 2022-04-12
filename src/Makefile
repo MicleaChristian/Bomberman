@@ -1,5 +1,5 @@
 Target := Bomberman
-Sources := main.cpp
+Sources := toto.cpp
 IrrlichtHome :=../licht/
 BinPath = ./
 

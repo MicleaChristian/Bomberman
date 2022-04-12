@@ -27,8 +27,9 @@ struct SAppContext
 };
 
 
-int menu()
+int main()
 {
+	ISoundEngine* engine = createIrrKlangDevice();
 
 	MyEventReceiver receiver;
 
@@ -54,6 +55,7 @@ int menu()
 	const f32 MOVEMENT_SPEED = 5.f;
 	int i;
 	int check_menu = i = 1;
+	engine->play2D("../sounds/mariomenu.ogg", true);
 	while(device->run())
 	{
 		// Work out a frame delta time.
