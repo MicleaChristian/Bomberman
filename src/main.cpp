@@ -4,53 +4,66 @@
 #pragma comment(lib, "irrKlang.lib")
 #endif
 
+
 #if defined(WIN32)
 #include <conio.h>
 #else
 #include "conio.h"
 #endif
 
+
 #include <conio.h>
 #include <irrlicht.h>
 #include "driverChoice.h"
 #include <irrKlang.h>
 #include <stdio.h>
-#include "toto.cpp"
 #include "../include/mario.hpp"
+
 
 using namespace irrklang;
 using namespace irr;
+using namespace core;
+using namespace scene;
+using namespace io;
+using namespace std;
+using namespace gui;
+using namespace video;
 
-
-
-
-
-//Create variables
-
-int chckrot=0;
-int check_move = 0;
 
 int main(int argc, const char** argv)
 
 {
 
+//Variables
+
+	int chckrot=0;
+	int check_move = 0;
+	int bombe = 0;
+	bool soundPlayed = false;
+	float f,g,h;
+	bool rotation = true;
+	bool game = false;
+	int m;
+	int music = 1;
+	int check_menu = 1;
+	int check_quit;
+	bool sound = false;
+	bool sound1 = false;
+	bool sound2 = false;
+	bool sound3 = false;
+	bool sound4 = false;
+	bool sound5 = false;
+	bool sound6 = false;
+
 //Create sound engine
 
 	ISoundEngine* engine = createIrrKlangDevice();
-
-
-//Choose render engine
-
-	int menu();
-
-
 
 //Create window
 
 	MyEventReceiver receiver;
 
-	IrrlichtDevice* device = createDevice(EDT_OPENGL,
-			core::dimension2d<u32>(1920, 1080), 32, false, false, false, &receiver);
+	IrrlichtDevice* device = createDevice(video::EDT_OPENGL,core::dimension2d<u32>(1920, 1080), 32, false, false, false, &receiver);
 
 	if (device == 0)
 		return 1; // could not create selected driver.
@@ -58,17 +71,14 @@ int main(int argc, const char** argv)
 
 	video::IVideoDriver* driver = device->getVideoDriver();
 	scene::ISceneManager* smgr = device->getSceneManager();
+	IGUIEnvironment* guienv = device->getGUIEnvironment();
 
+//Load all 3d models
 
+	scene::IAnimatedMesh *mesh2 =smgr->getMesh("../models/mario.b3d");
+	scene::IAnimatedMesh *mesh3 =smgr->getMesh("../models/bombe.obj");
 
-
-//load all 3d models
-
-	irr::scene::IAnimatedMesh *mesh2 =smgr->getMesh("../models/mario.b3d");
-	irr::scene::IAnimatedMesh *mesh =smgr->getMesh("../models/brick.obj");
-
-
-//failure to load 3d models conditions
+//Failure to load 3d models conditions
 
 	if(!mesh2)
 	{
@@ -76,477 +86,774 @@ int main(int argc, const char** argv)
 		return 1;
 	}
 
-	if(!mesh)
+	if(!mesh3)
 	{
 		device->drop();
 		return 1;
 	}
 
-
 //3d models attributes
 
-
-
-
-	irr::scene::IAnimatedMeshSceneNode *mario = smgr->addAnimatedMeshSceneNode ( mesh2 );
+	IAnimatedMeshSceneNode *mario = smgr->addAnimatedMeshSceneNode ( mesh2 );
 	if (mario)
 	{
-		mario->setMaterialFlag(irr::video::EMF_LIGHTING, false);
+		mario->setMaterialFlag(EMF_LIGHTING, false);
 		mario->setMaterialTexture(0, driver->getTexture("../textures/mario.png"));
-		mario->setMaterialTexture(2, driver->getTexture("../textures/meye.png"));
-		mario->setMaterialTexture(1, driver->getTexture("../textures/brow.png"));
-		mario->setScale(irr::core::vector3df(0.05f, 0.05f, 0.05f));
+		mario->setScale(vector3df(0.04f, 0.04f, 0.04f));
 		mario->setFrameLoop(0,60);
-	}
-//map gen
-
-	scene::ITriangleSelector* selector = 0;
-
-	if (mario)
-	{
-		mario->setPosition(core::vector3df(0,10,0));
-
-		selector = smgr->createOctreeTriangleSelector(
-				mario->getMesh(), mario, 128);
-		mario->setTriangleSelector(selector);
-		// We're not done with this selector yet, so don't drop it.
+		mario->setPosition(vector3df(1,-0.5,6));
 	}
 
-		if (selector)
+	IAnimatedMeshSceneNode *bomb = smgr->addAnimatedMeshSceneNode ( mesh3 );
+	if (bomb)
 	{
-		scene::ISceneNodeAnimator* anim = smgr->createCollisionResponseAnimator(
-			selector, mario, core::vector3df(30,50,30),
-			core::vector3df(0,-10,0), core::vector3df(0,30,0));
-		selector->drop(); // As soon as we're done with the selector, drop it.
-		mario->addAnimator(anim);
-		anim->drop();  // And likewise, drop the animator when we're done referring to it.
+		bomb->setMaterialFlag(EMF_LIGHTING, false);
+		bomb->setMaterialTexture(0, driver->getTexture("../textures/bomb.png"));
+		bomb->setScale(vector3df(0.15f, 0.15f, 0.15f));
+		bomb->setPosition(vector3df(5.0,-3,0));
 	}
 
-	irr::scene::IAnimatedMeshSceneNode *gr = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr)
+	driver->setTextureCreationFlag(video::ETCF_CREATE_MIP_MAPS, false);
+
+//Map gen
+
+	int b;
+	int i=0;
+	int ii=0;
+	int iii=0;
+	float x,z =-7.0f;
+	float xx,zz =-7.0f;
+	float xxx,zzz =-7.0f;
+	float y =0.0f;
+	float yy =-1.0f;
+	int count=0;
+	int count1=0;
+	int count2=0;
+
+	ITexture *ground;
+	ground= driver->getTexture("../textures/brick.png");
+
+	ITexture *gray;
+	gray= driver->getTexture("../textures/gray.png");
+
+	ITexture *br;
+	br= driver->getTexture("../textures/break.png");
+
+	IMeshSceneNode* gr[b];
+	while(i<=14)
 	{
-		gr->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr->setPosition(irr::core::vector3df(0,-1.5,0));
-		gr->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
+		while (count<=14)
+		{
+			if(i<1)
+			{
+				gr[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				gr[b]-> setMaterialTexture(0,gray);
+				gr[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				gr[b]->setPosition(vector3df(x,y,z));
+				gr[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
+			if(i>13)
+			{
+				gr[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				gr[b]-> setMaterialTexture(0,gray);
+				gr[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				gr[b]->setPosition(vector3df(x,y,z));
+				gr[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
+			if(count<1)
+			{
+				gr[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				gr[b]-> setMaterialTexture(0,gray);
+				gr[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				gr[b]->setPosition(vector3df(x,y,z));
+				gr[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
+			if(count>13)
+			{
+				gr[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				gr[b]-> setMaterialTexture(0,gray);
+				gr[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				gr[b]->setPosition(vector3df(x,y,z));
+				gr[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
+		x=x+1;
+		count++;
+		}
+	z=z+1;
+	x=0;
+	i++;
+	count=0;
 	}
 
-	irr::scene::IAnimatedMeshSceneNode *gr1 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr1)
+	IMeshSceneNode* gro[b];
+	while(ii<=14)
 	{
-		gr1->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr1->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr1->setPosition(irr::core::vector3df(0,-1.5,1.5));
-		gr1->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
+		while (count1<=14)
+		{
+		gro[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+		gro[b]-> setMaterialTexture(0,ground);
+		gro[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+		gro[b]->setPosition(vector3df(xx,yy,zz));
+		gro[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+		xx=xx+1;
+		count1++;
+		}
+	zz=zz+1;
+	xx=0;
+	ii++;
+	count1=0;
 	}
 
-	irr::scene::IAnimatedMeshSceneNode *gr2 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr2)
+	IMeshSceneNode* bre[b];
+	while(iii<=14)
 	{
-		gr2->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr2->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr2->setPosition(irr::core::vector3df(0,-1.5,-1.5));
-		gr2->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+		while (count2<=14)
+		{
+			if(xxx==2&&zzz==5)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr3 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr3)
-	{
-		gr3->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr3->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr3->setPosition(irr::core::vector3df(0,-1.5,3));
-		gr3->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==2&&zzz==3)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
+			else if(xxx==2&&zzz==1)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr4 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr4)
-	{
-		gr4->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr4->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr4->setPosition(irr::core::vector3df(0,-1.5,-3));
-		gr4->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==2&&zzz==-1)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
+			else if(xxx==2&&zzz==-3)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr5 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr5)
-	{
-		gr5->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr5->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr5->setPosition(irr::core::vector3df(1.5,-1.5,0));
-		gr5->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==2&&zzz==-5)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr6 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr6)
-	{
-		gr6->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr6->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr6->setPosition(irr::core::vector3df(1.5,-1.5,1.5));
-		gr6->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+						if(xxx==4&&zzz==5)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr7 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr7)
-	{
-		gr7->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr7->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr7->setPosition(irr::core::vector3df(1.5,-1.5,3));
-		gr7->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==4&&zzz==3)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr8 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr8)
-	{
-		gr8->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr8->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr8->setPosition(irr::core::vector3df(1.5,-1.5,-1.5));
-		gr8->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==4&&zzz==1)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr9 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr9)
-	{
-		gr9->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr9->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr9->setPosition(irr::core::vector3df(1.5,-1.5,-3));
-		gr9->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==4&&zzz==-1)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
+			else if(xxx==4&&zzz==-3)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr10 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr10)
-	{
-		gr10->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr10->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr10->setPosition(irr::core::vector3df(3,-1.5,-3));
-		gr10->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==4&&zzz==-5)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr11 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr11)
-	{
-		gr11->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr11->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr11->setPosition(irr::core::vector3df(4.5,-1.5,-3));
-		gr11->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			if(xxx==6&&zzz==5)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr12 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr12)
-	{
-		gr12->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr12->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr12->setPosition(irr::core::vector3df(6,-1.5,-3));
-		gr12->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==6&&zzz==3)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-    irr::scene::IAnimatedMeshSceneNode *gr13 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr13)
-	{
-		gr13->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr13->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr13->setPosition(irr::core::vector3df(4.5,-1.5,-1.5));
-		gr13->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==6&&zzz==1)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr14 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr14)
-	{
-		gr14->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr14->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr14->setPosition(irr::core::vector3df(3,-1.5,-1.5));
-		gr14->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==6&&zzz==-1)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr15 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr15)
-	{
-		gr15->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr15->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr15->setPosition(irr::core::vector3df(6,-1.5,-1.5));
-		gr15->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==6&&zzz==-3)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr16 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr16)
-	{
-		gr16->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr16->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr16->setPosition(irr::core::vector3df(4.5,-1.5,0));
-		gr16->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==6&&zzz==-5)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr17 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr17)
-	{
-		gr17->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr17->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr17->setPosition(irr::core::vector3df(3,-1.5,0));
-		gr17->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			if(xxx==8&&zzz==5)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr18 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr18)
-	{
-		gr18->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr18->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr18->setPosition(irr::core::vector3df(6,-1.5,0));
-		gr18->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==8&&zzz==3)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr19 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr19)
-	{
-		gr19->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr19->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr19->setPosition(irr::core::vector3df(4.5,-1.5,1.5));
-		gr19->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==8&&zzz==1)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr20 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr20)
-	{
-		gr20->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr20->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr20->setPosition(irr::core::vector3df(3,-1.5,1.5));
-		gr20->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==8&&zzz==-1)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr21 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr21)
-	{
-		gr21->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr21->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr21->setPosition(irr::core::vector3df(6,-1.5,1.5));
-		gr21->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==8&&zzz==-3)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr22 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr22)
-	{
-		gr22->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr22->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr22->setPosition(irr::core::vector3df(4.5,-1.5,3));
-		gr22->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==8&&zzz==-5)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr23 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr23)
-	{
-		gr23->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr23->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr23->setPosition(irr::core::vector3df(3,-1.5,3));
-		gr23->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			if(xxx==10&&zzz==5)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr24 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr24)
-	{
-		gr24->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr24->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr24->setPosition(irr::core::vector3df(6,-1.5,3));
-		gr24->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==10&&zzz==3)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr25 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr25)
-	{
-		gr25->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr25->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr25->setPosition(irr::core::vector3df(0,-1.5,4.5));
-		gr25->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==10&&zzz==1)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr26 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr26)
-	{
-		gr26->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr26->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr26->setPosition(irr::core::vector3df(1.5,-1.5,4.5));
-		gr26->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==10&&zzz==-1)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr27 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr27)
-	{
-		gr27->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr27->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr27->setPosition(irr::core::vector3df(3,-1.5,4.5));
-		gr27->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==10&&zzz==-3)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr28 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr28)
-	{
-		gr28->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr28->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr28->setPosition(irr::core::vector3df(4.5,-1.5,4.5));
-		gr28->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==10&&zzz==-5)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr29 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr29)
-	{
-		gr29->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr29->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr29->setPosition(irr::core::vector3df(6,-1.5,4.5));
-		gr29->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			if(xxx==12&&zzz==5)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-		irr::scene::IAnimatedMeshSceneNode *gr30 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr30)
-	{
-		gr30->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr30->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr30->setPosition(irr::core::vector3df(0,-1.5,-4.5));
-		gr30->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==12&&zzz==3)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr31 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr31)
-	{
-		gr31->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr31->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr31->setPosition(irr::core::vector3df(1.5,-1.5,-4.5));
-		gr31->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==12&&zzz==1)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr32 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr32)
-	{
-		gr32->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr32->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr32->setPosition(irr::core::vector3df(3,-1.5,-4.5));
-		gr32->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==12&&zzz==-1)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr33 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr33)
-	{
-		gr33->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr33->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr33->setPosition(irr::core::vector3df(4.5,-1.5,-4.5));
-		gr33->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==12&&zzz==-3)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr34 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr34)
-	{
-		gr34->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr34->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr34->setPosition(irr::core::vector3df(6,-1.5,-4.5));
-		gr34->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+			else if(xxx==12&&zzz==-5)
+			{
+				bre[b]= smgr->addCubeSceneNode(1,0,-1, vector3df(0,0,0));
+				bre[b]-> setMaterialTexture(0,br);
+				bre[b]-> setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+				bre[b]->setPosition(vector3df(xxx,y,zzz));
+				bre[b]->setMaterialFlag(video::EMF_LIGHTING, false);
+			}
 
-	irr::scene::IAnimatedMeshSceneNode *gr35 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr35)
-	{
-		gr35->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr35->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr35->setPosition(irr::core::vector3df(7.5,-1.5,-4.5));
-		gr35->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
+		xxx=xxx+1;
+		count2++;
+		}
 
-	irr::scene::IAnimatedMeshSceneNode *gr36 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr36)
-	{
-		gr36->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr36->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr36->setPosition(irr::core::vector3df(7.5,-1.5,4.5));
-		gr36->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
-
-	irr::scene::IAnimatedMeshSceneNode *gr37 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr37)
-	{
-		gr37->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr37->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr37->setPosition(irr::core::vector3df(7.5,-1.5,3));
-		gr37->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
-
-	irr::scene::IAnimatedMeshSceneNode *gr38 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr38)
-	{
-		gr38->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr38->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr38->setPosition(irr::core::vector3df(7.5,-1.5,-3));
-		gr38->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
-
-	irr::scene::IAnimatedMeshSceneNode *gr39 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr39)
-	{
-		gr39->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr39->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr39->setPosition(irr::core::vector3df(7.5,-1.5,1.5));
-		gr39->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
-
-	irr::scene::IAnimatedMeshSceneNode *gr40 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr40)
-	{
-		gr40->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr40->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr40->setPosition(irr::core::vector3df(7.5,-1.5,-1.5));
-		gr40->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
-
-	irr::scene::IAnimatedMeshSceneNode *gr41 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr41)
-	{
-		gr41->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr41->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr41->setPosition(irr::core::vector3df(7.5,-1.5,0));
-		gr41->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
-
-	irr::scene::IAnimatedMeshSceneNode *gr42 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr42)
-	{
-		gr42->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr42->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr42->setPosition(irr::core::vector3df(7.5,0,3));
-		gr42->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
-	}
-	irr::scene::IAnimatedMeshSceneNode *gr43 = smgr->addAnimatedMeshSceneNode ( mesh );
-	if (gr43)
-	{
-		gr43->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-		gr43->setMaterialTexture(0, driver->getTexture("../textures/brick.png"));
-		gr43->setPosition(irr::core::vector3df(3,0,3));
-		gr43->setScale(irr::core::vector3df(0.7f, 0.7f, 0.7f));
+	zzz=zzz+1;
+	xxx=0;
+	iii++;
+	count2=0;
+	
 	}
 
 //Create in-game camera
 
-	smgr->addCameraSceneNode(0, irr::core::vector3df(0,7,0), irr::core::vector3df(10, -15, 0));
+	smgr->addCameraSceneNode(0, core::vector3df(1,11,0), core::vector3df(10, -15, 0));
 	device->getCursorControl()->setVisible(true);
-//create movement physics
 
+//Create movement physics
 
 	int lastFPS = -1;
 	u32 then = device->getTimer()->getTime();
-	const f32 MOVEMENT_SPEED = 7.f;
-//play BGM
+	const f32 MOVEMENT_SPEED = 7.0f;
 
-	engine->play2D("../sounds/mario.ogg", true);
-	driver->setTextureCreationFlag(video::ETCF_CREATE_MIP_MAPS, false);
+//Create skydome
 
+    scene::ISceneNode* skydome=smgr->addSkyDomeSceneNode(driver->getTexture("../textures/sky1.png"),32,32,1.0f,2.0f);
 
-    scene::ISceneNode* skydome=smgr->addSkyDomeSceneNode(driver->getTexture("../textures/sky.jpg"),16,16,1.0f,2.0f);
+	ISceneNodeAnimator* ani=smgr->createRotationAnimator(vector3df(0.009,0.009,0.009));
+	skydome->addAnimator(ani);
+	ani->drop();
+		
+
 
     driver->setTextureCreationFlag(video::ETCF_CREATE_MIP_MAPS, true);
-//open window
+
+//Play BGM
+
+	ISoundSource* menu = engine->addSoundSourceFromFile("../sounds/mariomenu.ogg");
+
+	ISoundSource* gmae = engine->addSoundSourceFromFile("../sounds/mario.ogg"); 
+	if (music == 1) 
+		engine->play2D(menu);
+
+//Open window
 
 	while(device->run())
 	{
 		const u32 now = device->getTimer()->getTime();
 		const f32 frameDeltaTime = (f32)(now - then) / 1000.f;
 		then = now;
-//Movement
+		if (rotation == true)
+
+//Menu
+	if(game == false)
+	{
+
+	if(receiver.IsKeyDown(KEY_KEY_A))
+		{
+			check_menu = 1;
+			if(!sound)
+			{
+				engine->play2D("../sounds/yoshi.ogg");
+				sound=true;
+			}
+		}
+
+
+		if(receiver.IsKeyDown(KEY_KEY_Z))
+		{
+			check_menu = 2;
+			if(!sound1)
+			{
+				engine->play2D("../sounds/yoshi.ogg");
+				sound1=true;
+			}
+		}
+
+		if(receiver.IsKeyDown(KEY_KEY_E))
+		{
+			check_menu = 11;
+			if(!sound2)
+			{
+				engine->play2D("../sounds/yoshi.ogg");
+				sound2=true;
+			}
+		}
+
+		if(receiver.IsKeyDown(KEY_F1))
+		{
+			check_menu = 4;
+			if(!sound3)
+			{
+				engine->play2D("../sounds/yoshi.ogg");
+				sound3=true;
+			}
+		}
+
+		if(receiver.IsKeyDown(KEY_F2))
+		{
+			check_menu = 5;
+			if(!sound4)
+			{
+				engine->play2D("../sounds/yoshi.ogg");
+				sound4=true;
+			}
+		}
+
+		if(receiver.IsKeyDown(KEY_F3))
+		{
+			check_menu = 6;
+			if(!sound5)
+			{
+				engine->play2D("../sounds/yoshi.ogg");
+				sound5=true;
+			}
+		}
+
+		if(receiver.IsKeyDown(KEY_F4))
+		{
+			check_menu = 7;
+			if(!sound6)
+			{
+				engine->play2D("../sounds/yoshi.ogg");
+				sound6=true;
+			}
+		}
+
+		if(!receiver.IsKeyDown(KEY_KEY_A))
+		sound=false;
+
+		if(!receiver.IsKeyDown(KEY_KEY_Z))
+		sound1=false;
+
+		if(!receiver.IsKeyDown(KEY_KEY_E))
+		sound2=false;
+
+		if(!receiver.IsKeyDown(KEY_F1))
+		sound3=false;
+
+		if(!receiver.IsKeyDown(KEY_F2))
+		sound4=false;
+
+		if(!receiver.IsKeyDown(KEY_F3))
+		sound5=false;
+
+		if(!receiver.IsKeyDown(KEY_F4))
+		sound6=false;
+
+
+		//std::cout << "check_menu = " << check_menu << std::endl;
+
+		/* std::cout << "check_menu = " << check_menu << std::endl;
+		std::cout << "music = " << music << std::endl; */
+
+	//----------------------------conditions----------------------------
+
+		
+		if (check_menu == 1 )
+		{
+			guienv->clear();
+			device->getGUIEnvironment()->addImage(
+			driver->getTexture("../textures/1-1.png"),
+			core::position2d<s32>(-60,0));
+		}
+
+
+		if (check_menu == 2)
+		{
+			guienv->clear();
+			device->getGUIEnvironment()->addImage(
+			driver->getTexture("../textures/1-2 MARIO MENU OPTIONS S.png"),
+			core::position2d<s32>(-60,0));
+		}
+  
+		if (check_menu == 3)
+		{
+			guienv->clear();
+			device->getGUIEnvironment()->addImage(
+			driver->getTexture("../textures/1-3 MARIO MENU EXIT S.png"),
+			core::position2d<s32>(-60,0));	
+		}
+
+		if (check_menu == 4)
+		{
+			guienv->clear();
+			device->getGUIEnvironment()->addImage(
+			driver->getTexture("../textures/2-4-1 MARIO MENU OPTIONS MUSIQUE S.png"),
+			core::position2d<s32>(-60,0));	
+		}
+
+		if (check_menu == 5)
+		{
+			guienv->clear();
+			device->getGUIEnvironment()->addImage(
+			driver->getTexture("../textures/2-4-2 MARIO MENU OPTIONS REGLES S.png"),
+			core::position2d<s32>(-60,0));	
+		}
+
+		if (check_menu == 6)
+		{
+			guienv->clear();
+			device->getGUIEnvironment()->addImage(
+			driver->getTexture("../textures/2-4-3 MARIO MENU OPTIONS CREDITS S.png"),
+			core::position2d<s32>(-60,0));	
+		}
+
+		if (check_menu == 7)
+		{
+			guienv->clear();
+			device->getGUIEnvironment()->addImage(
+			driver->getTexture("../textures/2-4-4 MARIO MENU OPTIONS RETOUR S.png"),
+			core::position2d<s32>(-60,0));	
+		}
+
+		if (check_menu == 8)
+		{
+			guienv->clear();
+			device->getGUIEnvironment()->addImage(
+			driver->getTexture("../textures/2-4-2-1 MARIO MENU OPTIONS REGLES S.png"),
+			core::position2d<s32>(-60,0));	
+		}
+
+		if (check_menu == 9)
+		{
+			guienv->clear();
+			device->getGUIEnvironment()->addImage(
+			driver->getTexture("../textures/2-4-3-1 MARIO MENU OPTIONS CREDITS S.png"),
+			core::position2d<s32>(-60,0));	
+		}
+
+		if (check_menu == 10)
+		{
+			guienv->clear();
+			device->getGUIEnvironment()->addImage(
+			driver->getTexture("../textures/off.png"),
+			core::position2d<s32>(-60,0));
+		}
+
+		if (check_menu == 11)
+		{
+			guienv->clear();
+			device->getGUIEnvironment()->addImage(
+			driver->getTexture("../textures/quit.png"),
+			core::position2d<s32>(-60,0));
+		}
+
+		if (check_menu == 1 && receiver.IsKeyDown(KEY_RETURN))
+		{
+			game = true;
+			engine->stopAllSounds();
+			if (music == 1)
+			engine->play2D(gmae);
+
+		}
+
+		if (check_menu == 2 && receiver.IsKeyDown(KEY_RETURN))
+		{
+			check_menu = 4;
+		}
+
+		if (check_menu == 3 && receiver.IsKeyDown(KEY_RETURN))
+		{
+			return EXIT_SUCCESS;	
+		}
+
+		if (check_menu == 5 && receiver.IsKeyDown(KEY_RETURN))
+		{
+			check_menu = 8;
+		}
+
+		if (check_menu == 6 && receiver.IsKeyDown(KEY_RETURN))
+		{
+			check_menu = 9;
+		}
+
+		if (check_menu == 7 && receiver.IsKeyDown(KEY_RETURN))
+		{
+			check_menu = 1;
+		}
+
+		if (check_menu == 4 && receiver.IsKeyDown(KEY_KEY_N))
+		{
+			check_menu = 10;
+			engine->stopAllSounds();
+			music = 0;
+		}
+
+		if (check_menu == 10 && receiver.IsKeyDown(KEY_KEY_Y))
+		{
+			check_menu = 4;
+			engine->play2D(menu);
+			music = 1;
+		}
+
+		if (receiver.IsKeyDown(KEY_KEY_E))
+		{
+			check_menu = 11;
+			engine->stopAllSounds();
+			engine->play2D("../sounds/no.ogg",true);
+
+		}
+
+		if (check_menu == 11 && receiver.IsKeyDown(KEY_KEY_Y))
+		{
+			return 0;
+		}
+
+		if (check_menu == 11 && receiver.IsKeyDown(KEY_KEY_N))
+		{
+			check_menu = 1;
+			engine->stopAllSounds();
+			engine->play2D(menu);
+		}
+	}
+		
+//Game
+
+	if (game == true)
+	{
+		guienv->clear();
+
+	//Movement
 
 		if(check_move==1)
 		{
@@ -561,7 +868,7 @@ int main(int argc, const char** argv)
 
 		core::vector3df nodePosition = mario->getPosition();
 
-		if(receiver.IsKeyDown(irr::KEY_KEY_Z))
+		if(receiver.IsKeyDown(KEY_KEY_Z))
 		{
 			nodePosition.X += MOVEMENT_SPEED * frameDeltaTime;
 			chckrot=1;
@@ -613,30 +920,28 @@ int main(int argc, const char** argv)
 			check_move = 1;
 		}
 			
-		if(receiver.IsKeyDown(KEY_SPACE)&& check_move==0)
-		{
-			//engine->play2D("sounds/mama.ogg");
-			mario->setFrameLoop(78,79);
-		}
+
 
 		if(!receiver.IsKeyDown(KEY_SPACE))
 		{
 			if(chckrot==1)
-			mario->setRotation(irr::core::vector3df(0,270,0));
+			mario->setRotation(core::vector3df(0,270,0));
 			else if(chckrot==2)
-			mario->setRotation(irr::core::vector3df(0,90,0));
+			mario->setRotation(core::vector3df(0,90,0));
 			if(chckrot==3)
-			mario->setRotation(irr::core::vector3df(0,180,0));
+			mario->setRotation(core::vector3df(0,180,0));
 			else if(chckrot==4)
-			mario->setRotation(irr::core::vector3df(0,0,0));
+			mario->setRotation(core::vector3df(0,0,0));
 			if(chckrot==5)
-			mario->setRotation(irr::core::vector3df(0,315,0));
+			mario->setRotation(core::vector3df(0,315,0));
 			if(chckrot==6)
-			mario->setRotation(irr::core::vector3df(0,45,0));
+			mario->setRotation(core::vector3df(0,45,0));
 			if(chckrot==7)
-			mario->setRotation(irr::core::vector3df(0,135,0));
+			mario->setRotation(core::vector3df(0,135,0));
 			if(chckrot==8)
-			mario->setRotation(irr::core::vector3df(0,225,0));
+			mario->setRotation(core::vector3df(0,225,0));
+			soundPlayed = false;
+			
 		}		
 
 		if(!receiver.IsKeyDown(KEY_KEY_Z)&&!receiver.IsKeyDown(KEY_KEY_Q)&&!receiver.IsKeyDown(KEY_KEY_S)&&!receiver.IsKeyDown(KEY_KEY_D)&&!receiver.IsKeyDown(KEY_SPACE))
@@ -648,8 +953,99 @@ int main(int argc, const char** argv)
 
 		mario->setPosition(nodePosition);
 
+	//Conditions bomb
+
+		if(receiver.IsKeyDown(KEY_SPACE)&& check_move==0)
+		{
+			mario->setFrameLoop(78,79);
+			if(chckrot==1)
+			{
+				bomb->setPosition(mario->getPosition()+vector3df(1,0,0));
+				bomb->setRotation(vector3df(0,180,0));
+			}
+
+			else if(chckrot==2)
+			{
+				bomb->setPosition(mario->getPosition()+vector3df(-1,0,0));
+				bomb->setRotation(vector3df(0,0,0));
+			}
+
+			if(chckrot==3)
+			{
+				bomb->setPosition(mario->getPosition()+vector3df(0,0,1));
+				bomb->setRotation(vector3df(0,90,0));
+			}
+
+			else if(chckrot==4)
+			{
+				bomb->setPosition(mario->getPosition()+vector3df(0,0,-1));
+				bomb->setRotation(vector3df(0,270,0));			
+			}
+
+			if (!soundPlayed)
+			{
+  				engine->play2D("../sounds/run.ogg");
+  				soundPlayed = true;
+			}
+
+		}
+
+	//Creation collisions
+
+		core::vector3df pos = core::vector3df();
+		
+ 		pos = (*mario).getPosition();
+
+		if(mario->getPosition()>vector3df(13,pos.Y,pos.Z))
+			mario->setPosition(vector3df(13,pos.Y,pos.Z));
+
+		if(mario->getPosition()<vector3df(1,pos.Y,pos.Z))
+			mario->setPosition(vector3df(1,pos.Y,pos.Z));
+
+		core::vector3df posi = core::vector3df();
+		
+ 		posi = (*mario).getPosition();
+
+		if(mario->getPosition()>vector3df(posi.X,posi.Y,6))
+			mario->setPosition(vector3df(posi.X,posi.Y,6));
+
+		if(mario->getPosition()<vector3df(posi.X,posi.Y,-6))
+			mario->setPosition(vector3df(posi.X,posi.Y,-6));
+
+//Quit the game
+
+		if (receiver.IsKeyDown(KEY_ESCAPE))
+		{
+			engine->stopAllSounds();
+			engine->play2D("../sounds/no.ogg", true);
+			check_menu = 11;
+		}
 
 
+		if (check_menu == 11)
+		{
+			device->getGUIEnvironment()->addImage(
+			driver->getTexture("../textures/quit.png"),
+			core::position2d<s32>(-60,0));
+			device->getGUIEnvironment()->drawAll(); 
+		}
+
+		if (check_menu == 11 && receiver.IsKeyDown(KEY_KEY_Y))
+		{
+			return 0;
+		}
+
+		if (check_menu == 11 && receiver.IsKeyDown(KEY_KEY_N))
+		{
+			check_menu = 12;
+			guienv->clear();
+			engine->stopAllSounds();
+			engine->play2D(gmae);
+		}
+
+	}
+			
+//Random conditions
 
 		driver->beginScene(true, true, video::SColor(255,0,0,0));
 
@@ -662,7 +1058,7 @@ int main(int argc, const char** argv)
 
 		if (lastFPS != fps)
 		{
-			core::stringw tmp(L"Supew Bombeuwman");
+			core::stringw tmp(L"Super Bomberman");
 			tmp += L"   fps: ";
 			tmp += fps;
 
@@ -676,4 +1072,5 @@ int main(int argc, const char** argv)
 	*/
 	device->drop();
 	return 0;
+
 }

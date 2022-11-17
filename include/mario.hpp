@@ -8,7 +8,6 @@
 #include <irrKlang.h>
 #include <stdio.h>
 
-using namespace irrklang;
 using namespace irr;
 
 class MyEventReceiver : public IEventReceiver
